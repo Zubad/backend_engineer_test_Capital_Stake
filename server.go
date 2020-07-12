@@ -5,6 +5,10 @@ import (
     "net"
 	"os"
 	"encoding/csv"
+	"encoding/json"
+	//"bufio"
+	//"time"
+	//"strings"
 )
 
 const (
@@ -34,9 +38,11 @@ func main() {
 	csvLines, err := csv.NewReader(csvFile).ReadAll()
     if err != nil {
         fmt.Println(err)
-    }    
+	}
+	
+	var patients []covidData
     for _, line := range csvLines {
-        patients := covidData{
+		patient := covidData{
             cum_test_positive: line[0],
             cum_test_performed: line[1],
 			date: line[2],
@@ -45,8 +51,25 @@ func main() {
 			region: line[5],
 			admitted: line[6],
         }
-        fmt.Println(patients.cum_test_performed + " " + patients.cum_test_positive + " " + patients.region)
+		patients = append(patients, patient)
+	}
+	
+	jsonData, err := json.Marshal(patients)
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
     }
+ 
+    fmt.Println(string(jsonData))
+ 
+    jsonFile, err := os.Create("./data.json")
+    if err != nil {
+        fmt.Println(err)
+    }
+    defer jsonFile.Close()
+ 
+    jsonFile.Write(jsonData)
+    jsonFile.Close()
 
     // Listen for incoming connections.
     l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
@@ -56,14 +79,16 @@ func main() {
     }
     // Close the listener when the application closes.
     defer l.Close()
-    fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
+	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
+	
     for {
         // Listen for an incoming connection.
         conn, err := l.Accept()
         if err != nil {
             fmt.Println("Error accepting: ", err.Error())
             os.Exit(1)
-        }
+		}
+		
         // Handle connections in a new goroutine.
         go handleRequest(conn)
     }
