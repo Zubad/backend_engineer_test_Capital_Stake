@@ -1,4 +1,4 @@
-Cumulative  Test positive,Cumulative  tests performed,Date,Discharged,Expired,Region,Admitted
+Positive,Performed,Date,Discharged,Expired,Region,Admitted
 2,80,3/11/2020,0,0,ICT,2
 0,95,3/11/2020,0,0,Punjab,0
 14,171,3/11/2020,1,0,Sindh,13
