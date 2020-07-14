@@ -6,7 +6,8 @@ import (
 	"os"
 	"encoding/csv"
 	"encoding/json"
-	//"bufio"
+    //"bufio"
+    "strconv"
 	//"time"
 	//"strings"
 )
@@ -16,17 +17,17 @@ const (
     CONN_PORT = "4040"
     CONN_TYPE = "tcp"
 )
-type covidData struct {
-    cum_test_positive string
-    cum_test_performed string
-	date string
-	discharged string
-	expired string
-	region string
-	admitted string
+type CovidPatient struct {
+    Positive    int
+    Performed   int
+	Date        string
+	Discharged  int
+	Expired     int
+	Region      string
+	Admitted    int
 }
 
-func main() {
+func main(){
 
 	csvFile, err := os.Open("covid_final_data.csv")
 	if err != nil {
@@ -40,20 +41,34 @@ func main() {
         fmt.Println(err)
 	}
 	
-	var patients []covidData
+	//var patients []covidPatient
+    //for _, line := range csvLines {
+	//	patient := covidPatient{
+    //        cum_test_positive: line[0],
+    //        cum_test_performed: line[1],
+	//		date: line[2],
+	//		discharged: line[3],
+	//		expired: line[4],
+	//		region: line[5],
+	//		admitted: line[6],
+    //    }
+    //    patients = append(patients, patient)
+    //    fmt.Printf("%v \n", patient)
+	//}
+    var patient CovidPatient
+    var patients []CovidPatient
     for _, line := range csvLines {
-		patient := covidData{
-            cum_test_positive: line[0],
-            cum_test_performed: line[1],
-			date: line[2],
-			discharged: line[3],
-			expired: line[4],
-			region: line[5],
-			admitted: line[6],
-        }
-		patients = append(patients, patient)
+        patient.Positive, _ = strconv.Atoi(line[0])
+        patient.Performed, _ = strconv.Atoi(line[1])
+		patient.Date = line[2]
+		patient.Discharged, _ = strconv.Atoi(line[3])
+		patient.Expired, _ = strconv.Atoi(line[4])
+		patient.Region = line[5]
+		patient.Admitted, _ = strconv.Atoi(line[6])
+        patients = append(patients, patient)
+        fmt.Printf("%v \n", patient)
 	}
-	
+    
 	jsonData, err := json.Marshal(patients)
     if err != nil {
         fmt.Println(err)
@@ -61,15 +76,10 @@ func main() {
     }
  
     fmt.Println(string(jsonData))
- 
-    jsonFile, err := os.Create("./data.json")
-    if err != nil {
-        fmt.Println(err)
-    }
-    defer jsonFile.Close()
- 
-    jsonFile.Write(jsonData)
-    jsonFile.Close()
+
+
+
+
 
     // Listen for incoming connections.
     l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
