@@ -33,6 +33,7 @@ type DataError struct {
 
 func Load(path string) []CovidPatient {
 	table := make([]CovidPatient, 0)
+	var patient CovidPatient
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err.Error())
@@ -40,24 +41,20 @@ func Load(path string) []CovidPatient {
     defer file.Close()
 
 	reader := csv.NewReader(file)
-	for {
-		row, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			panic(err.Error())
-		}
-		c := CovidPatient{
-			Positive:   row[0],
-			Performed:  row[1],
-			Date:       row[2],
-            Discharged: row[3],
-            Expired:    row[4],
-            Region:     row[5],
-            Admitted:   row[6],
-		}
-		table = append(table, c)
+	csvData, err := reader.ReadAll()
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+    }
+	for _, row := range csvData{
+		patient.Positive =  row[0]
+		patient.Performed =  row[1]
+		patient.Date =       row[2]
+        patient.Discharged = row[3]
+        patient.Expired =    row[4]
+        patient.Region =     row[5]
+        patient.Admitted =   row[6]
+		table = append(table, patient)
 	}
 	return table
 }
