@@ -73,8 +73,10 @@ func Find(table []CovidPatient, filter string) []CovidPatient {
 			cp.Region == filter ||
 			strings.Contains(strings.ToUpper(cp.Positive), filter) ||
             strings.Contains(strings.ToUpper(cp.Performed), filter) ||
+            strings.Contains(strings.ToUpper(cp.Date), filter) ||
             strings.Contains(strings.ToUpper(cp.Discharged), filter) ||
             strings.Contains(strings.ToUpper(cp.Expired), filter) ||
+            strings.Contains(strings.ToUpper(cp.Region), filter) ||
             strings.Contains(strings.ToUpper(cp.Admitted), filter){
 			result = append(result, cp)
 		}
