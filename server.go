@@ -3,118 +3,181 @@ package main
 import (
     "fmt"
     "net"
-	"os"
+    "os"
+    "flag"
+    "log"
 	"encoding/csv"
 	"encoding/json"
-    //"bufio"
-    "strconv"
-	//"time"
-	//"strings"
+    "bufio"
+	"io"
+	"strings"
 )
 
-const (
-    CONN_HOST = "localhost"
-    CONN_PORT = "4040"
-    CONN_TYPE = "tcp"
-)
 type CovidPatient struct {
-    Positive    int
-    Performed   int
-	Date        string
-	Discharged  int
-	Expired     int
-	Region      string
-	Admitted    int
+    Positive    string      `json:"Covid_Positive"`
+    Performed   string      `json:"Coivd_Performed"`
+	Date        string      `json:"Covid_Date"`
+	Discharged  string      `json:"Covid_Discharged"`
+	Expired     string      `json:"Covid_Expired"`
+	Region      string      `json:"Covid_Region"`
+	Admitted    string      `json:"Covid_Admitted"`
 }
+
+type DataRequest struct {   //currency request
+	Get string `json:"get"`
+}
+
+type DataError struct {     //currency error
+	Error string `json:"Covid_error"`
+}
+
+func Load(path string) []CovidPatient {
+	table := make([]CovidPatient, 0)
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err.Error())
+	}
+    defer file.Close()
+
+	reader := csv.NewReader(file)
+	for {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err.Error())
+		}
+		c := CovidPatient{
+			Positive:   row[0],
+			Performed:  row[1],
+			Date:       row[2],
+            Discharged: row[3],
+            Expired:    row[4],
+            Region:     row[5],
+            Admitted:   row[6],
+		}
+		table = append(table, c)
+	}
+	return table
+}
+
+func Find(table []CovidPatient, filter string) []CovidPatient {
+	if filter == "" || filter == "*" {
+		return table
+	}
+	result := make([]CovidPatient, 0)
+	filter = strings.ToUpper(filter)
+	for _, cp := range table {
+		if cp.Date == filter ||
+			cp.Region == filter ||
+			strings.Contains(strings.ToUpper(cp.Positive), filter) ||
+            strings.Contains(strings.ToUpper(cp.Performed), filter) ||
+            strings.Contains(strings.ToUpper(cp.Date), filter) ||
+            strings.Contains(strings.ToUpper(cp.Discharged), filter) ||
+            strings.Contains(strings.ToUpper(cp.Expired), filter) ||
+            strings.Contains(strings.ToUpper(cp.Region), filter) ||
+            strings.Contains(strings.ToUpper(cp.Admitted), filter){
+			result = append(result, cp)
+		}
+	}
+	return result
+}
+
+var (
+	patientsDetail = Load("./covid_final_data.csv")
+)
+
+
 
 func main(){
+    var addr string
+	var network string
+	flag.StringVar(&addr, "e", ":4040", "service endpoint [ip addr or socket path]")
+	flag.StringVar(&network, "n", "tcp", "network protocol [tcp,unix]")
+	flag.Parse()
 
-	csvFile, err := os.Open("covid_final_data.csv")
+	// validate supported network protocols
+	switch network {
+	case "tcp", "tcp4", "tcp6", "unix":
+	default:
+		fmt.Println("unsupported network protocol")
+		os.Exit(1)
+	}
+
+	// create a listener for provided network and host address
+	ln, err := net.Listen(network, addr)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
 	}
-	fmt.Println("Successfully Opened CSV file")
-	defer csvFile.Close()
-
-	csvLines, err := csv.NewReader(csvFile).ReadAll()
-    if err != nil {
-        fmt.Println(err)
-	}
-	
-	//var patients []covidPatient
-    //for _, line := range csvLines {
-	//	patient := covidPatient{
-    //        cum_test_positive: line[0],
-    //        cum_test_performed: line[1],
-	//		date: line[2],
-	//		discharged: line[3],
-	//		expired: line[4],
-	//		region: line[5],
-	//		admitted: line[6],
-    //    }
-    //    patients = append(patients, patient)
-    //    fmt.Printf("%v \n", patient)
-	//}
-    var patient CovidPatient
-    var patients []CovidPatient
-    for _, line := range csvLines {
-        patient.Positive, _ = strconv.Atoi(line[0])
-        patient.Performed, _ = strconv.Atoi(line[1])
-		patient.Date = line[2]
-		patient.Discharged, _ = strconv.Atoi(line[3])
-		patient.Expired, _ = strconv.Atoi(line[4])
-		patient.Region = line[5]
-		patient.Admitted, _ = strconv.Atoi(line[6])
-        patients = append(patients, patient)
-        fmt.Printf("%v \n", patient)
-	}
+	defer ln.Close()
+	log.Println("Covid19 Condition in Pakistan")
+    log.Printf("Service started: (%s) %s\n", network, addr)
     
-	jsonData, err := json.Marshal(patients)
-    if err != nil {
-        fmt.Println(err)
-        os.Exit(1)
-    }
- 
-    fmt.Println(string(jsonData))
-
-
-
-
-
-    // Listen for incoming connections.
-    l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
-    if err != nil {
-        fmt.Println("Error listening:", err.Error())
-        os.Exit(1)
-    }
-    // Close the listener when the application closes.
-    defer l.Close()
-	fmt.Println("Listening on " + CONN_HOST + ":" + CONN_PORT)
-	
     for {
-        // Listen for an incoming connection.
-        conn, err := l.Accept()
-        if err != nil {
-            fmt.Println("Error accepting: ", err.Error())
-            os.Exit(1)
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Println(err)
+			conn.Close()
+			continue
 		}
-		
-        // Handle connections in a new goroutine.
-        go handleRequest(conn)
-    }
+		log.Println("Connected to ", conn.RemoteAddr())
+		go handleConnection(conn)
+	}
+}
+func handleConnection(conn net.Conn) {
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Println("error closing connection:", err)
+		}
+	}()
+
+	reader := bufio.NewReaderSize(conn, 4)
+
+	// command-loop
+	for {
+		// reader will read bytes until '}' is encounter which
+		buf, err := reader.ReadSlice('}')
+		if err != nil {
+			if err != io.EOF {
+				log.Println("connection read error:", err)
+				return
+			}
+		}
+        reader.Reset(conn)
+        
+        var req DataRequest
+		if err := json.Unmarshal(buf, &req); err != nil {
+			log.Println("failed to unmarshal request:", err)
+			cerr, jerr := json.Marshal(DataError{Error: err.Error()})
+			if jerr != nil {
+				log.Println("failed to marshal DataError:", jerr)
+				continue
+			}
+			if _, werr := conn.Write(cerr); werr != nil {
+				log.Println("failed to write to DataError:", werr)
+				return
+			}
+			continue
+		}
+
+        result := Find(patientsDetail, req.Get)
+
+        rsp, err := json.Marshal(&result)
+		if err != nil {
+			log.Println("failed to marshal data:", err)
+			if _, err := fmt.Fprintf(conn, `{"data_error":"internal error"}`); err != nil {
+				log.Printf("failed to write to client: %v", err)
+				return
+			}
+			continue
+        }
+		if _, err := conn.Write(rsp); err != nil {
+			log.Println("failed to write response:", err)
+			return
+		}
+	}
 }
 
-// Handles incoming requests.
-func handleRequest(conn net.Conn) {
-  // Make a buffer to hold incoming data.
-  buf := make([]byte, 1024)
-  // Read the incoming connection into the buffer.
-  _ , err := conn.Read(buf)
-  if err != nil {
-    fmt.Println("Error reading:", err.Error())
-  }
-  // Send a response back to person contacting us.
-  conn.Write([]byte("Message received."))
-  // Close the connection when you're done with it.
-  conn.Close()
-}
+
