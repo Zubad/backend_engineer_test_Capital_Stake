@@ -89,7 +89,6 @@ var (
 )
 
 func main(){
-	fmt.Printf("%v", patientsDetail)
     var addr string
 	var network string
 	flag.StringVar(&addr, "e", ":4040", "service endpoint [ip addr or socket path]")
@@ -172,7 +171,6 @@ func handleConnection(conn net.Conn) {
 			log.Println("failed to write response:", err)
 			return
 		}
-		log.Printf("Json Data %v", result)
 	}
 }
 
