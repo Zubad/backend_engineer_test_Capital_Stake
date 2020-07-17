@@ -73,10 +73,8 @@ func Find(table []CovidPatient, filter string) []CovidPatient {
 			cp.Region == filter ||
 			strings.Contains(strings.ToUpper(cp.Positive), filter) ||
             strings.Contains(strings.ToUpper(cp.Performed), filter) ||
-            strings.Contains(strings.ToUpper(cp.Date), filter) ||
             strings.Contains(strings.ToUpper(cp.Discharged), filter) ||
             strings.Contains(strings.ToUpper(cp.Expired), filter) ||
-            strings.Contains(strings.ToUpper(cp.Region), filter) ||
             strings.Contains(strings.ToUpper(cp.Admitted), filter){
 			result = append(result, cp)
 		}
@@ -91,6 +89,7 @@ var (
 
 
 func main(){
+	fmt.Printf("%v", patientsDetail)
     var addr string
 	var network string
 	flag.StringVar(&addr, "e", ":4040", "service endpoint [ip addr or socket path]")
@@ -170,11 +169,12 @@ func handleConnection(conn net.Conn) {
 				return
 			}
 			continue
-        }
+		}
 		if _, err := conn.Write(rsp); err != nil {
 			log.Println("failed to write response:", err)
 			return
 		}
+		log.Printf("Json Data %v", result)
 	}
 }
 
