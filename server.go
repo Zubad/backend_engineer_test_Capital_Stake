@@ -23,11 +23,11 @@ type CovidPatient struct {
 	Admitted    string      `json:"Covid_Admitted"`
 }
 
-type DataRequest struct {   //currency request
+type DataRequest struct {   
 	Get string `json:"get"`
 }
 
-type DataError struct {     //currency error
+type DataError struct {     
 	Error string `json:"Covid_error"`
 }
 
@@ -135,9 +135,7 @@ func handleConnection(conn net.Conn) {
 
 	reader := bufio.NewReaderSize(conn, 4)
 
-	// command-loop
 	for {
-		// reader will read bytes until '}' is encounter which
 		buf, err := reader.ReadSlice('}')
 		if err != nil {
 			if err != io.EOF {
