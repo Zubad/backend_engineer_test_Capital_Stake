@@ -71,12 +71,12 @@ func Find(table []CovidPatient, filter string) []CovidPatient {
 	for _, cp := range table {
 		if cp.Date == filter ||
 			cp.Region == filter ||
-			strings.Contains(strings.ToUpper(cp.Positive), filter) ||
-            strings.Contains(strings.ToUpper(cp.Performed), filter) ||
-            strings.Contains(strings.ToUpper(cp.Date), filter) ||
-            strings.Contains(strings.ToUpper(cp.Discharged), filter) ||
-            strings.Contains(strings.ToUpper(cp.Expired), filter) ||
-            strings.Contains(strings.ToUpper(cp.Region), filter) ||
+			strings.Contains(strings.ToUpper(cp.Positive), filter) 		||
+            strings.Contains(strings.ToUpper(cp.Performed), filter) 	||
+            strings.Contains(strings.ToUpper(cp.Date), filter) 			||
+            strings.Contains(strings.ToUpper(cp.Discharged), filter) 	||
+            strings.Contains(strings.ToUpper(cp.Expired), filter) 		||
+            strings.Contains(strings.ToUpper(cp.Region), filter) 		||
             strings.Contains(strings.ToUpper(cp.Admitted), filter){
 			result = append(result, cp)
 		}
@@ -88,8 +88,6 @@ var (
 	patientsDetail = Load("./covid_final_data.csv")
 )
 
-
-
 func main(){
 	fmt.Printf("%v", patientsDetail)
     var addr string
@@ -98,7 +96,6 @@ func main(){
 	flag.StringVar(&network, "n", "tcp", "network protocol [tcp,unix]")
 	flag.Parse()
 
-	// validate supported network protocols
 	switch network {
 	case "tcp", "tcp4", "tcp6", "unix":
 	default:
@@ -106,7 +103,6 @@ func main(){
 		os.Exit(1)
 	}
 
-	// create a listener for provided network and host address
 	ln, err := net.Listen(network, addr)
 	if err != nil {
 		log.Println(err)
